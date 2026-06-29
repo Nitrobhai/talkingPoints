@@ -1,0 +1,13 @@
+{
+  "name": "talking-points",
+  "version": "1.0.0",
+  "description": "A Jackbox-style Talking Points party game clone",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.4",
+    "socket.io": "^4.7.2"
+  }
+}

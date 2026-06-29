@@ -1,0 +1,145 @@
+:root {
+  color-scheme: dark;
+  background: #12131a;
+  color: #e3e7ff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, rgba(100, 115, 255, 0.2), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(86, 255, 191, 0.12), transparent 25%),
+    #0b0c12;
+}
+
+.app-shell {
+  width: min(100%, 980px);
+  margin: 24px;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(18, 19, 26, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
+}
+
+header {
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+p {
+  margin: 0;
+  color: #aab1ff;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  border: none;
+  border-radius: 14px;
+  padding: 14px 18px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #5f82ff, #3cd0c5);
+  color: white;
+  font-weight: 700;
+  transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button.secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd2ff;
+}
+
+button.danger {
+  background: #ff5f7a;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #edf2ff;
+  padding: 14px 16px;
+  margin: 8px 0 16px;
+}
+
+textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.status {
+  margin-bottom: 16px;
+  color: #7f8fff;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  color: #bcc5ff;
+  font-size: 0.95rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list li {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 10px;
+}
+
+.fade-in {
+  animation: fadeIn 0.23s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
