@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
-  background: #12131a;
-  color: #e3e7ff;
+  background: #22130f;
+  color: #fff7f0;
   font-family: Inter, system-ui, sans-serif;
 }
 
@@ -15,9 +15,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top, rgba(100, 115, 255, 0.2), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(86, 255, 191, 0.12), transparent 25%),
-    #0b0c12;
+  background: radial-gradient(circle at top, rgba(255, 112, 67, 0.22), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(255, 182, 64, 0.16), transparent 25%),
+    #2a150f;
+}
+
+body.host-mode {
+  background: #1c0d09;
 }
 
 .app-shell {
@@ -56,10 +60,173 @@ button {
   border-radius: 14px;
   padding: 14px 18px;
   cursor: pointer;
-  background: linear-gradient(135deg, #5f82ff, #3cd0c5);
-  color: white;
+  background: linear-gradient(135deg, #e76f51, #d95d5d);
+  color: #fff9f4;
   font-weight: 700;
   transition: transform 0.16s ease, filter 0.16s ease;
+}
+
+.assistant-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 14px 0;
+}
+
+.image-option {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f7ff;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 12px;
+  min-height: 260px;
+}
+
+.image-option img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.image-option span {
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .assistant-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .image-option {
+    min-height: 200px;
+  }
+
+  .slide-body {
+    font-size: clamp(1.2rem, 6vw, 2rem);
+  }
+
+  .small-body {
+    font-size: clamp(1rem, 5vw, 1.4rem);
+  }
+}
+
+.image-option.selected {
+  background: linear-gradient(135deg, #ff9e6e, #ffcb6b);
+  color: #341d10;
+}
+
+.topic-btn {
+  margin: 0;
+}
+
+.timer-pill {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(92, 205, 196, 0.18);
+  color: #8cf7ea;
+}
+
+.roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+
+.tag {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.slide-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  padding: clamp(16px, 3vw, 24px);
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.big-slide {
+  min-height: 420px;
+}
+
+.host-presentation {
+  background: linear-gradient(180deg, #0e1018, #131727);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 28px;
+  padding: 26px;
+  min-height: 70vh;
+}
+
+.host-topbar,
+.host-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.host-badge {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+
+.host-slide-image,
+.player-slide-image {
+  width: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  aspect-ratio: 16 / 9;
+  margin: 10px 0;
+}
+
+.slide-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 10px;
+}
+
+.slide-body {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.small-body {
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+.role-note {
+  margin-top: 14px;
+  color: #8f9dff;
+}
+
+.slider-box {
+  margin: 18px 0;
+}
+
+#ratingSlider {
+  width: 100%;
+  accent-color: #ff9d4d;
+}
+
+.rating-value {
+  margin-top: 10px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 button:hover {
@@ -90,6 +257,14 @@ select {
 textarea {
   min-height: 140px;
   resize: vertical;
+}
+
+.prompt-template {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 14px;
+  border-radius: 14px;
+  margin: 12px 0;
+  font-size: 1.15rem;
 }
 
 .card {

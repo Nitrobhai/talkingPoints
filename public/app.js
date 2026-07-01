@@ -67,6 +67,7 @@ function renderLobby(game) {
   document.getElementById('backBtn').addEventListener('click', () => {
     location.reload();
   });
+
   if (isHost) {
     document.getElementById('startRoundBtn').addEventListener('click', () => {
       socket.emit('startRound', { code: game.code });
@@ -74,138 +75,215 @@ function renderLobby(game) {
   }
 }
 
-function renderWriting(game) {
-  const submission = game.submissions[playerId];
-  const submitted = Boolean(submission);
-  const prompt = game.currentPrompt;
-  render(`
-    <div class="card fade-in">
-      <div class="status">Round ${game.round}</div>
-      <h2>Write your talk</h2>
-      <p>Use the slide bullet points below to prepare your spoken pitch.</p>
-      <div class="card">
-        <h3>${prompt.title}</h3>
-        <ul class="list">${prompt.bullets.map((bullet) => `<li>${bullet}</li>`).join('')}</ul>
-      </div>
-      <label for="talkText">Your talk text</label>
-      <textarea id="talkText" placeholder="Write your short presentation here..." ${submitted ? 'disabled' : ''}>${submission?.text || ''}</textarea>
-      <button id="submitTalkBtn" ${submitted ? 'disabled' : ''}>${submitted ? 'Waiting for others...' : 'Submit Talk'}</button>
-      <button id="leaveBtn" class="secondary">Leave Game</button>
-    </div>
-  `);
-
-  document.getElementById('submitTalkBtn').addEventListener('click', () => {
-    const text = document.getElementById('talkText').value.trim();
-    if (!text) return alert('Write something first.');
-    socket.emit('submitTalk', { code: game.code, text });
-  });
-  document.getElementById('leaveBtn').addEventListener('click', () => {
-    location.reload();
-  });
-}
-
-function renderPresentation(game) {
-  const presenterId = game.presentationOrder[game.currentPresentationIndex];
-  const submission = game.submissions[presenterId];
-  const presenterName = submission?.name || 'Player';
-  const willBeNext = game.currentPresentationIndex < game.presentationOrder.length - 1;
-
-  render(`
-    <div class="card fade-in">
-      <div class="status">Presentation ${game.currentPresentationIndex + 1} of ${game.presentationOrder.length}</div>
-      <h2>${presenterName}'s slide</h2>
-      <div class="card">
-        <p>${submission?.text || 'No talk submitted.'}</p>
-      </div>
-      <p>Everyone sees the slide. Host can advance once ready.</p>
-      ${socket.id === game.hostId ? `<button id="nextPresentationBtn">${willBeNext ? 'Next Presentation' : 'Open Voting'}</button>` : ''}
-    </div>
-  `);
-
-  if (socket.id === game.hostId) {
-    document.getElementById('nextPresentationBtn').addEventListener('click', () => {
-      socket.emit('nextPresentation', { code: game.code });
-    });
-  }
-}
-
-function renderVoting(game) {
-  const currentPresenterId = game.presentationOrder[game.currentPresentationIndex];
-  const currentSubmission = game.submissions[currentPresenterId];
-  const votesCast = Object.values(game.votes).reduce((sum, vote) => sum + Object.keys(vote).length, 0);
-  const alreadyVoted = Object.values(game.votes).some((vote) => vote[playerId]);
-
-  const voteOptions = game.presentationOrder
-    .filter((id) => id !== playerId)
-    .map((id) => {
-      const target = game.players.find((player) => player.id === id);
-      const score = Object.keys(game.votes[id] || {}).length;
-      return `<button class="vote-btn" data-id="${id}">${target?.name || 'Player'} (${score} votes)</button>`;
+function renderPromptDrafting(game) {
+  const isHost = socket.id === game.hostId;
+  const promptTemplate = game.promptTemplates?.[socket.id] || 'Finish the sentence below.';
+  const myDraft = game.promptDrafts?.[socket.id] || '';
+  const players = game.players.filter((player) => player.id !== game.hostId);
+  const statusList = players
+    .map((player) => {
+      const done = !!game.promptDrafts?.[player.id];
+      return `<li>${player.name} — ${done ? 'Submitted' : 'Waiting for prompt'}</li>`;
     })
     .join('');
 
   render(`
     <div class="card fade-in">
-      <div class="status">Voting Round</div>
-      <h2>Choose your favorite presentation</h2>
-      <p>Vote once for the slide you liked most.</p>
+      <div class="status">Round ${game.round} • Prompt Drafting</div>
+      ${isHost ? '<h2>Host: collect player prompts</h2>' : '<h2>Write your prompt</h2>'}
+      ${isHost
+        ? '<p>Each player should fill in their prompt. Once everyone has submitted, press Begin Round.</p>'
+        : `<p>Finish the sentence below in your own words.</p><div class="prompt-template">${promptTemplate}</div><textarea id="promptInput" placeholder="Write your finished prompt here...">${myDraft}</textarea><button id="submitPromptBtn">Submit prompt</button>`}
       <div class="card">
-        <p><strong>Current slide:</strong> ${currentSubmission?.name}</p>
-        <p>${currentSubmission?.text || 'No talk submitted.'}</p>
+        <h3>Prompt status</h3>
+        <ul class="list">${statusList}</ul>
       </div>
-      <div class="grid">${voteOptions}</div>
-      <p>${alreadyVoted ? 'You have voted. Waiting for the host to finish voting.' : 'Tap a player to cast your vote.'}</p>
-      ${socket.id === game.hostId ? '<button id="finishVotingBtn">Finish Voting</button>' : ''}
+      ${isHost ? `<button id="beginRoundBtn" ${game.allPromptsSubmitted ? '' : 'disabled'}>Begin Round</button>` : ''}
     </div>
   `);
 
-  document.querySelectorAll('.vote-btn').forEach((button) => {
-    button.addEventListener('click', () => {
-      if (alreadyVoted) return alert('You already voted.');
-      const targetId = button.dataset.id;
-      socket.emit('vote', { code: game.code, targetId });
+  if (!isHost) {
+    document.getElementById('submitPromptBtn').addEventListener('click', () => {
+      const prompt = document.getElementById('promptInput').value.trim();
+      socket.emit('submitPrompt', { code: game.code, prompt });
     });
-  });
-  if (socket.id === game.hostId) {
-    document.getElementById('finishVotingBtn').addEventListener('click', () => {
-      socket.emit('finishVoting', { code: game.code });
+  }
+
+  if (isHost) {
+    document.getElementById('beginRoundBtn').addEventListener('click', () => {
+      socket.emit('beginRound', { code: game.code });
     });
   }
 }
 
-function renderRoundComplete(game, scoreResults = []) {
-  const scoreboard = game.players
-    .map((player) => `<li>${player.name}: ${player.score} pts</li>`)
-    .join('');
-  const results = scoreResults.length
-    ? `<div class="card"><h3>Vote Results</h3><ul class="list">${scoreResults.map((result) => `<li>${game.players.find((player) => player.id === result.playerId)?.name || 'Player'} — ${result.count} votes</li>`).join('')}</ul></div>`
-    : '';
+function renderTopicChoice(game) {
+  const isAssistant = socket.id === game.assistantId;
+  const isSpeaker = socket.id === game.speakerId;
+  const topicOptions = game.topicOptions || [];
 
   render(`
     <div class="card fade-in">
-      <div class="status">Round ${game.round} Complete</div>
-      <h2>Round Results</h2>
-      ${results}
-      <div class="card">
-        <h3>Scoreboard</h3>
-        <ul class="list">${scoreboard}</ul>
+      <div class="status">Round ${game.round} • Prompt Selection</div>
+      <div class="roles">
+        <span class="tag">Speaker: ${game.speakerName || 'Speaker'}</span>
+        <span class="tag">Assistant: ${game.assistantName || 'Assistant'}</span>
       </div>
-      ${socket.id === game.hostId ? '<button id="resetBtn">Start Next Round</button>' : ''}
+      <h2>Assistant chooses the prompt</h2>
+      <p>Choose one prompt for the speaker to use.</p>
+      <div class="grid">
+        ${topicOptions.map((topic) => `<button class="topic-btn" data-topic="${topic}">${topic}</button>`).join('')}
+      </div>
+      ${isAssistant ? '' : '<p class="role-note">The assistant is choosing the prompt now.</p>'}
+      ${isSpeaker ? '<p class="role-note">You are the speaker. Wait for the assistant to choose the prompt.</p>' : ''}
     </div>
   `);
 
-  if (socket.id === game.hostId) {
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      socket.emit('resetToLobby', { code: game.code });
+  if (isAssistant) {
+    document.querySelectorAll('.topic-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        socket.emit('chooseTopic', { code: game.code, topic: button.dataset.topic });
+      });
     });
   }
+}
+
+function renderPlaying(game) {
+  const isHost = socket.id === game.hostId;
+  const isSpeaker = socket.id === game.speakerId;
+  const isAssistant = socket.id === game.assistantId;
+  const timer = Math.max(0, game.timerSeconds || 0);
+  const slide = game.currentSlide;
+  const imageChoices = game.pendingImageOptions || [];
+  const nextSlideType = game.slides?.[game.currentSlideIndex + 1]?.type;
+  const canChooseImage = isAssistant && game.stage === 'playing' && nextSlideType === 'image';
+
+  const hostView = isHost
+    ? `<div class="host-presentation">
+        <div class="host-topbar">
+          <span class="host-badge">Host View</span>
+          <span class="timer-pill">${game.stage === 'countdown' ? `Starts in ${timer}s` : `${timer}s`}</span>
+        </div>
+        <div class="slide-card big-slide">
+          <div class="slide-label">${slide?.subtitle || 'Slide'}</div>
+          ${slide?.type === 'image'
+            ? `<img class="host-slide-image" src="${slide.imageUrl}" alt="${slide.text}" />
+              <div class="slide-body">${slide.text}</div>`
+            : `<div class="slide-body">${slide?.text || 'Waiting for prompt...'}</div>`}
+        </div>
+        <div class="host-footer">
+          <span>Speaker: ${game.speakerName || 'Speaker'}</span>
+          <span>Assistant: ${game.assistantName || 'Assistant'}</span>
+        </div>
+      </div>`
+    : '';
+
+  const playerView = !isHost
+    ? `<div class="card fade-in game-screen">
+        <div class="status">Round ${game.round} • <span class="timer-pill">${game.stage === 'countdown' ? `Starts in ${timer}s` : `${timer}s`}</span></div>
+        <div class="roles">
+          <span class="tag">Speaker: ${game.speakerName || 'Speaker'}</span>
+          <span class="tag">Assistant: ${game.assistantName || 'Assistant'}</span>
+        </div>
+
+        <div class="slide-card">
+          <div class="slide-label">${slide?.subtitle || 'Slide'}</div>
+          ${slide?.type === 'image'
+            ? `<img class="player-slide-image" src="${slide.imageUrl}" alt="${slide.text}" />
+              <div class="slide-body small-body">${slide.text}</div>`
+            : `<div class="slide-body">${slide?.text || 'Waiting for prompt...'}</div>`}
+        </div>
+
+        ${game.stage === 'countdown' ? '<p class="role-note">The speech starts after the countdown finishes.</p>' : ''}
+        ${isSpeaker ? '<p class="role-note">You are the speaker. Decide when to move to the next slide.</p>' : ''}
+        ${isSpeaker ? '<button id="nextSlideBtn" class="secondary">Skip to next slide</button>' : ''}
+        ${canChooseImage ? '<p class="role-note">Choose the next image for the speaker.</p>' : ''}
+        ${canChooseImage ? `<div class="assistant-tools">${imageChoices.map((image) => `<button class="image-option ${game.selectedNextImage?.id === image.id ? 'selected' : ''}" data-image-id="${image.id}"><img src="${image.imageUrl}" alt="${image.label}" /><span>${image.label}</span></button>`).join('')}</div>` : ''}
+        ${!isSpeaker && !isAssistant && !isHost ? '<p class="role-note">The audience is watching the speaker and assistant.</p>' : ''}
+      </div>`
+    : '';
+
+  render(`${hostView || playerView}`);
+
+  if (isSpeaker) {
+    document.getElementById('nextSlideBtn').addEventListener('click', () => {
+      socket.emit('nextSlide', { code: game.code });
+    });
+  }
+
+  if (canChooseImage) {
+    document.querySelectorAll('.image-option').forEach((button) => {
+      button.addEventListener('click', () => {
+        socket.emit('chooseImageForNextSlide', { code: game.code, imageId: button.dataset.imageId });
+      });
+    });
+  }
+}
+
+function renderRating(game) {
+  const isHost = socket.id === game.hostId;
+  const canRate = socket.id !== game.speakerId && socket.id !== game.assistantId && socket.id !== game.hostId;
+  const myRating = game.ratings[playerId] || 5;
+
+  render(`
+    <div class="card fade-in">
+      <div class="status">Rating Round</div>
+      <h2>Rate the performance</h2>
+      <p>Adjust the slider from 0.1 to 10. The average rounded to the nearest tenth becomes the round points.</p>
+      <div class="card">
+        <h3>Speaker: ${game.speakerName || 'Speaker'}</h3>
+        <h3>Assistant: ${game.assistantName || 'Assistant'}</h3>
+      </div>
+      ${canRate ? `<div class="slider-box"><input id="ratingSlider" type="range" min="0.1" max="10" step="0.1" value="${myRating}" /><div class="rating-value" id="ratingValue">${Number(myRating).toFixed(1)}/10</div></div>` : '<p class="role-note">You are not allowed to vote in this round.</p>'}
+      ${isHost ? '<button id="finishRatingsBtn">Finish Ratings</button>' : ''}
+    </div>
+  `);
+
+  if (canRate) {
+    const slider = document.getElementById('ratingSlider');
+    const ratingValue = document.getElementById('ratingValue');
+    const updateValue = () => {
+      ratingValue.textContent = `${Number(slider.value).toFixed(1)}/10`;
+      socket.emit('rateRound', { code: game.code, stars: Number(slider.value) });
+    };
+
+    slider.addEventListener('input', updateValue);
+    slider.addEventListener('change', updateValue);
+  }
+
+  if (isHost) {
+    document.getElementById('finishRatingsBtn').addEventListener('click', () => {
+      socket.emit('finishRatings', { code: game.code });
+    });
+  }
+}
+
+function renderGameOver(game) {
+  const winner = game.players.find((player) => player.id === game.winnerId);
+  const scoreboard = game.players
+    .map((player) => `<li>${player.name}: ${player.score} pts</li>`)
+    .join('');
+
+  render(`
+    <div class="card fade-in">
+      <div class="status">Game Complete</div>
+      <h2>Winner: ${winner?.name || 'No winner'}</h2>
+      <div class="card">
+        <h3>Final Scoreboard</h3>
+        <ul class="list">${scoreboard}</ul>
+      </div>
+      <button id="playAgainBtn">Play Again</button>
+    </div>
+  `);
+
+  document.getElementById('playAgainBtn').addEventListener('click', () => {
+    location.reload();
+  });
 }
 
 socket.on('gameCreated', (game) => {
   currentGame = game;
   playerId = socket.id;
   playerName = 'Host';
-  console.debug('[TP] gameCreated payload:', game);
   renderLobby({ ...game, hostId: socket.id });
 });
 
@@ -216,43 +294,38 @@ socket.on('joinedGame', ({ code, playerId: id, name }) => {
 
 socket.on('gameUpdated', (game) => {
   currentGame = game;
-  console.debug('[TP] gameUpdated payload:', game);
   if (game.stage === 'lobby') {
     renderLobby(game);
-  } else if (game.stage === 'writing') {
-    renderWriting(game);
-  } else if (game.stage === 'presentation') {
-    renderPresentation(game);
-  } else if (game.stage === 'voting') {
-    renderVoting(game);
-  } else if (game.stage === 'roundComplete') {
-    renderRoundComplete(game);
+  } else if (game.stage === 'promptDrafting') {
+    renderPromptDrafting(game);
+  } else if (game.stage === 'topicChoice') {
+    renderTopicChoice(game);
+  } else if (game.stage === 'countdown' || game.stage === 'playing') {
+    renderPlaying(game);
+  } else if (game.stage === 'rating') {
+    renderRating(game);
   }
 });
 
 socket.on('roundStarted', (game) => {
   currentGame = game;
-  renderWriting(game);
+  if (game.stage === 'promptDrafting') {
+    renderPromptDrafting(game);
+  } else if (game.stage === 'topicChoice') {
+    renderTopicChoice(game);
+  } else if (game.stage === 'countdown' || game.stage === 'playing') {
+    renderPlaying(game);
+  }
 });
 
-socket.on('presentationReady', (game) => {
+socket.on('ratingOpen', (game) => {
   currentGame = game;
-  renderPresentation(game);
+  renderRating(game);
 });
 
-socket.on('presentationAdvanced', (game) => {
+socket.on('gameOver', (game) => {
   currentGame = game;
-  renderPresentation(game);
-});
-
-socket.on('votingOpen', (game) => {
-  currentGame = game;
-  renderVoting(game);
-});
-
-socket.on('roundFinished', ({ game, scores }) => {
-  currentGame = game;
-  renderRoundComplete(game, scores);
+  renderGameOver(game);
 });
 
 socket.on('joinFailed', (message) => {
