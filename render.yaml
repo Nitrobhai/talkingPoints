@@ -1,0 +1,21 @@
+# =============================================================
+#  render.yaml  —  one-click deploy settings for Render.com
+# =============================================================
+#
+#  This file tells Render.com how to put our game online for free.
+#  You don't run this yourself — Render reads it automatically when
+#  you connect this repository (or click the "Deploy to Render"
+#  button in the README).
+#
+#  After it deploys, Render gives you a permanent web address like
+#  https://talking-points-xxxx.onrender.com that you can share with
+#  friends. No Node.js needed on anyone's computer — Render runs it.
+# -------------------------------------------------------------
+
+services:
+  - type: web            # a normal website/server
+    name: talking-points
+    env: node            # our game is a Node.js app
+    plan: free           # the free plan (great for game night)
+    buildCommand: npm install   # download the helper libraries
+    startCommand: npm start     # start the game server

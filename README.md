@@ -136,13 +136,48 @@ and refresh the page to see it.
 3. On the TV screen computer, open the game at that address, e.g. `http://192.168.1.20:3000`.
    The QR code will then point phones to the right place automatically. ✅
 
-## 🌐 Putting it online (so anyone can join from anywhere)
+## 🌐 Putting it online — get a permanent web link (best for Chromebooks!)
 
-If you want a real public link (like a true Jackbox game), you can host it for free on a
-service like [Render](https://render.com/) or [Railway](https://railway.app/). Upload this
-project, set the start command to `npm start`, and they'll give you a public web address.
-The QR code will automatically use that address — no extra setup needed, because the code
-builds the join link from whatever address the TV screen is opened at.
+If you **don't** want to install Node.js (for example on a **Chromebook**), or you want to
+play with friends who are **not** in the same room, you can host the game online for free.
+A hosting company runs Node.js for you, and gives you a permanent link like
+`https://talking-points-xxxx.onrender.com` that anyone can open in a browser. **Nobody has
+to install anything** — the host opens the link on their laptop/Chromebook, everyone else
+scans the QR code with their phone.
+
+We'll use **[Render](https://render.com/)** because it's free and works entirely in your
+web browser (no terminal needed).
+
+### The easy way (one button)
+
+1. Click this button: 
+
+   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Nitrobhai/talkingPoints)
+
+2. Sign up for Render (you can log in with your GitHub account).
+3. Render reads the `render.yaml` file in this project and fills everything in for you.
+   Just click **Apply** / **Create**.
+4. Wait a minute or two. Render gives you a public URL — **that's your game link!** 🎉
+
+### The manual way (if the button ever changes)
+
+1. Go to [render.com](https://render.com) and sign up / log in with GitHub.
+2. Click **New +** → **Web Service** → connect the `Nitrobhai/talkingPoints` repo.
+3. Confirm these settings (they should already be filled in):
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Instance Type:** **Free**
+4. Click **Create Web Service**. When it finishes, copy the URL at the top — that's your link.
+
+### Using it
+
+Open your new link on any computer, click **Create a Room**, and share the QR code /
+room code. The QR code automatically uses your online address, so phones can join from
+anywhere. 📱
+
+> 💤 **Free-plan nap:** on the free plan, if nobody uses the site for about 15 minutes it
+> "goes to sleep." The next visit takes ~30–60 seconds to wake it back up. That's normal —
+> just wait a moment and it loads.
 
 ---
 
