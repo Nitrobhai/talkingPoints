@@ -32,7 +32,18 @@ const imageDeck = [
   { id: 'fire', label: 'Fireworks', emoji: '🎆', caption: 'A loud conclusion', imageUrl: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=900&q=80' },
   { id: 'umbrella', label: 'Umbrella Chaos', emoji: '☂️', caption: 'Prepared for disaster', imageUrl: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80' },
   { id: 'skeleton', label: 'Skeleton', emoji: '💀', caption: 'A dramatic reveal', imageUrl: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&w=900&q=80' },
-  { id: 'monster2', label: 'Alien Face', emoji: '👾', caption: 'The plot thickens', imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80' }
+  { id: 'monster2', label: 'Alien Face', emoji: '👾', caption: 'The plot thickens', imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80' },
+  { id: 'slide', label: 'Presentation Slide', emoji: '📽️', caption: 'A slide that should have stayed in the deck', imageUrl: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80' },
+  { id: 'youtube', label: 'YouTube Screen', emoji: '📺', caption: 'A very specific corner of the internet', imageUrl: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80' },
+  { id: 'meme', label: 'Meme Wall', emoji: '🖼️', caption: 'A masterpiece of absolutely nothing', imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80' },
+  { id: 'blank', label: 'Blank Screen', emoji: '⬜', caption: 'The silence before the disaster', imageUrl: 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80' },
+  { id: 'desk', label: 'Desk Disaster', emoji: '🧰', caption: 'The evidence is all over the place', imageUrl: 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=80' },
+  { id: 'window', label: 'Window View', emoji: '🪟', caption: 'A perfectly normal view with suspicious energy', imageUrl: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=900&q=80' },
+  { id: 'shelves', label: 'Odd Shelves', emoji: '📚', caption: 'Someone clearly overorganized their chaos', imageUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80' },
+  { id: 'fruit', label: 'Fruit Parade', emoji: '🍇', caption: 'A fruit-based conspiracy', imageUrl: 'https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=900&q=80' },
+  { id: 'tape', label: 'Tape Roll', emoji: '🧻', caption: 'Sticky, dramatic, and deeply suspicious', imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80' },
+  { id: 'suit', label: 'Suitcase', emoji: '🧳', caption: 'At least it looks prepared', imageUrl: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80' },
+  { id: 'cactus', label: 'Cactus', emoji: '🌵', caption: 'A tiny desert dictator', imageUrl: 'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=900&q=80' }
 ];
 
 function createGameCode() {
@@ -62,6 +73,11 @@ function createGame() {
     promptTemplates: {},
     promptDrafts: {},
     roleUsage: { speaker: {}, assistant: {} },
+    promptBank: [],
+    lastUsedPrompt: null,
+    usedImageIds: [],
+    pendingTextOptions: [],
+    pendingTextSlideIndex: null,
     winnerId: null,
     createdAt: Date.now()
   };
@@ -81,8 +97,29 @@ function shuffle(items) {
   return copy;
 }
 
-function getRandomImageOptions() {
-  return shuffle(imageDeck).slice(0, 4);
+function getRandomImageOptions(game) {
+  const unused = imageDeck.filter((image) => !game.usedImageIds.includes(image.id));
+  const pool = unused.length ? unused : imageDeck;
+  const chosen = shuffle(pool).slice(0, 4);
+  game.usedImageIds = [...new Set([...(game.usedImageIds || []), ...chosen.map((image) => image.id)])];
+  return chosen;
+}
+
+function buildTextPhraseOptions(speakerName, assistantName) {
+  return shuffle([
+    `This next beat makes ${speakerName} look like a genius.`,
+    `The room suddenly believes ${assistantName} without question.`,
+    `The evidence arrives in a way nobody can ignore.`,
+    `This is the part where the whole argument gets weird.`,
+    `The timing is perfect and the tension is unbearable.`,
+    `The audience leans in for one very specific reason.`
+  ]).slice(0, 4);
+}
+
+function getPromptChoices(game) {
+  const available = (game.promptBank || []).filter((prompt) => prompt !== game.lastUsedPrompt);
+  const pool = available.length ? available : (game.promptBank || []);
+  return shuffle(pool).slice(0, 4);
 }
 
 function assignPromptTemplates(game) {
@@ -142,7 +179,10 @@ function buildGameView(game) {
     promptDrafts: game.promptDrafts || {},
     winnerId: game.winnerId || null,
     canStartRound: game.players.length >= 2 && game.stage === 'lobby',
-    allPromptsSubmitted: game.players.filter((player) => player.id !== game.hostId).every((player) => !!game.promptDrafts[player.id])
+    allPromptsSubmitted: game.players.filter((player) => player.id !== game.hostId).every((player) => !!game.promptDrafts[player.id]),
+    pendingTextOptions: game.pendingTextOptions || [],
+    pendingTextSlideIndex: game.pendingTextSlideIndex,
+    promptBank: game.promptBank || []
   };
 }
 
@@ -156,14 +196,6 @@ function cleanupStaleGames() {
 }
 
 setInterval(cleanupStaleGames, 1000 * 60 * 5);
-setInterval(() => {
-  for (const game of games.values()) {
-    if ((game.stage === 'topicChoice' || game.stage === 'countdown' || game.stage === 'playing') && game.timerEndsAt) {
-      io.to(game.code).emit('gameUpdated', buildGameView(game));
-    }
-  }
-}, 1000);
-
 setInterval(() => {
   for (const game of games.values()) {
     if (game.stage === 'countdown' && game.timerEndsAt && Date.now() >= game.timerEndsAt) {
@@ -222,7 +254,6 @@ io.on('connection', (socket) => {
     }
 
     game.round += 1;
-    game.stage = 'promptDrafting';
     game.currentPrompt = null;
     game.topicOptions = [];
     game.slides = [];
@@ -234,9 +265,18 @@ io.on('connection', (socket) => {
     game.lastRoundSummary = null;
     game.pendingImageOptions = [];
     game.selectedNextImage = null;
+    game.pendingTextOptions = [];
+    game.pendingTextSlideIndex = null;
     game.promptDrafts = {};
     game.winnerId = null;
-    assignPromptTemplates(game);
+
+    if (game.round === 1) {
+      game.stage = 'promptDrafting';
+      assignPromptTemplates(game);
+    } else {
+      game.stage = 'topicChoice';
+      game.topicOptions = getPromptChoices(game);
+    }
 
     io.to(game.code).emit('roundStarted', buildGameView(game));
   });
@@ -249,6 +289,9 @@ io.on('connection', (socket) => {
     if (!value) return;
 
     game.promptDrafts[socket.id] = value;
+    if (!game.promptBank.includes(value)) {
+      game.promptBank.push(value);
+    }
     io.to(game.code).emit('gameUpdated', buildGameView(game));
   });
 
@@ -263,7 +306,7 @@ io.on('connection', (socket) => {
     }
 
     const { speaker, assistant } = pickSpeakerAndAssistant(game.players, game);
-    const promptChoices = shuffle(Object.values(game.promptDrafts)).slice(0, 4);
+    const promptChoices = getPromptChoices(game);
 
     game.speakerId = speaker.id;
     game.assistantId = assistant.id;
@@ -278,6 +321,8 @@ io.on('connection', (socket) => {
     game.ratings = {};
     game.pendingImageOptions = [];
     game.selectedNextImage = null;
+    game.pendingTextOptions = [];
+    game.pendingTextSlideIndex = null;
 
     io.to(game.code).emit('roundStarted', buildGameView(game));
   });
@@ -289,12 +334,12 @@ io.on('connection', (socket) => {
     const speakerName = game.players.find((player) => player.id === game.speakerId)?.name || 'Speaker';
     const assistantName = game.players.find((player) => player.id === game.assistantId)?.name || 'Assistant';
     const textOptions = [
-      'This next slide really proves my point.',
-      `${speakerName} said this next slide persuaded them to agree with me.`,
-      'This next slide makes the argument much easier to believe.',
-      `${assistantName} said this next slide changed their mind.`,
-      'The evidence on this next slide is impossible to ignore.',
-      `${speakerName} swears this next slide seals the deal.`
+      `The room leans in as ${speakerName} says this out loud.`,
+      `The whole thing starts to click for ${assistantName}.`,
+      `This is the part where the argument lands perfectly.`,
+      `The tension rises and the punchline arrives.`,
+      `The crowd suddenly understands the point.`,
+      `Even the quietest person has something to say about this.`
     ];
 
     const slides = [{ type: 'prompt', text: topic, subtitle: 'Prompt' }];
@@ -302,17 +347,43 @@ io.on('connection', (socket) => {
       if (index % 2 === 1) {
         slides.push({ type: 'image', text: '', subtitle: `Slide ${index}` });
       } else {
-        slides.push({ type: 'text', text: textOptions[(index / 2) - 1] || 'This next slide really proves my point.', subtitle: `Slide ${index}` });
+        slides.push({ type: 'text', text: '', subtitle: `Slide ${index}` });
       }
     }
 
     game.currentPrompt = topic;
     game.slides = slides;
     game.currentSlideIndex = 0;
-    game.stage = 'countdown';
-    game.pendingImageOptions = getRandomImageOptions();
+    game.stage = 'textChoice';
+    game.pendingImageOptions = getRandomImageOptions(game);
     game.selectedNextImage = null;
-    game.timerEndsAt = Date.now() + 3000;
+    game.pendingTextOptions = buildTextPhraseOptions(speakerName, assistantName);
+    game.pendingTextSlideIndex = 2;
+    game.timerEndsAt = null;
+
+    io.to(game.code).emit('gameUpdated', buildGameView(game));
+  });
+
+  socket.on('chooseTextPhrase', ({ code, phrase }) => {
+    const game = games.get(code);
+    if (!game || game.stage !== 'textChoice' || socket.id !== game.assistantId) return;
+
+    const chosenPhrase = phrase?.trim();
+    if (!chosenPhrase) return;
+
+    const targetIndex = game.pendingTextSlideIndex;
+    if (targetIndex == null || !game.slides[targetIndex]) return;
+
+    game.slides[targetIndex] = {
+      type: 'text',
+      text: chosenPhrase,
+      subtitle: `Slide ${targetIndex}`
+    };
+    game.currentSlideIndex = targetIndex;
+    game.pendingTextOptions = [];
+    game.pendingTextSlideIndex = null;
+    game.stage = 'playing';
+    game.timerEndsAt = game.timerEndsAt || Date.now() + 120000;
 
     io.to(game.code).emit('gameUpdated', buildGameView(game));
   });
@@ -335,7 +406,7 @@ io.on('connection', (socket) => {
       emoji: image.emoji
     };
     game.selectedNextImage = image;
-    game.pendingImageOptions = getRandomImageOptions();
+    game.pendingImageOptions = getRandomImageOptions(game);
 
     io.to(game.code).emit('gameUpdated', buildGameView(game));
   });
@@ -353,6 +424,18 @@ io.on('connection', (socket) => {
       return;
     }
 
+    if (nextSlide && nextSlide.type === 'text' && !nextSlide.text) {
+      game.stage = 'textChoice';
+      game.pendingTextSlideIndex = nextIndex;
+      game.pendingTextOptions = buildTextPhraseOptions(
+        game.players.find((player) => player.id === game.speakerId)?.name || 'Speaker',
+        game.players.find((player) => player.id === game.assistantId)?.name || 'Assistant'
+      );
+      game.timerEndsAt = null;
+      io.to(game.code).emit('gameUpdated', buildGameView(game));
+      return;
+    }
+
     game.currentSlideIndex = nextIndex;
     game.selectedNextImage = null;
 
@@ -363,7 +446,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    game.pendingImageOptions = getRandomImageOptions();
+    game.pendingImageOptions = getRandomImageOptions(game);
     io.to(game.code).emit('gameUpdated', buildGameView(game));
   });
 
@@ -414,7 +497,8 @@ io.on('connection', (socket) => {
       return;
     }
 
-    game.stage = 'promptDrafting';
+    game.lastUsedPrompt = game.currentPrompt || null;
+    game.stage = 'topicChoice';
     game.currentPrompt = null;
     game.currentSlideIndex = 0;
     game.speakerId = null;
@@ -422,10 +506,11 @@ io.on('connection', (socket) => {
     game.ratings = {};
     game.pendingImageOptions = [];
     game.selectedNextImage = null;
+    game.pendingTextOptions = [];
+    game.pendingTextSlideIndex = null;
     game.slides = [];
-    game.topicOptions = [];
+    game.topicOptions = getPromptChoices(game);
     game.promptDrafts = {};
-    assignPromptTemplates(game);
 
     io.to(game.code).emit('gameUpdated', buildGameView(game));
   });
@@ -448,6 +533,11 @@ io.on('connection', (socket) => {
     game.selectedNextImage = null;
     game.promptDrafts = {};
     game.promptTemplates = {};
+    game.promptBank = [];
+    game.lastUsedPrompt = null;
+    game.usedImageIds = [];
+    game.pendingTextOptions = [];
+    game.pendingTextSlideIndex = null;
     game.roleUsage = { speaker: {}, assistant: {} };
     game.winnerId = null;
 

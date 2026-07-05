@@ -8,6 +8,30 @@ function render(template) {
   app.innerHTML = template;
 }
 
+function getTimerText(game) {
+  if (game.stage === 'countdown') {
+    return `Starts in ${Math.max(0, game.timerSeconds || 0)}s`;
+  }
+  return `${Math.max(0, game.timerSeconds || 0)}s`;
+}
+
+function shouldRebuildPlayingView(nextGame, previousGame) {
+  if (!previousGame) return true;
+  if (previousGame.stage !== nextGame.stage) return true;
+  if (previousGame.currentSlideIndex !== nextGame.currentSlideIndex) return true;
+  if (previousGame.currentPrompt !== nextGame.currentPrompt) return true;
+  if (previousGame.speakerId !== nextGame.speakerId || previousGame.assistantId !== nextGame.assistantId) return true;
+  if (previousGame.currentSlide?.type !== nextGame.currentSlide?.type || previousGame.currentSlide?.subtitle !== nextGame.currentSlide?.subtitle || previousGame.currentSlide?.text !== nextGame.currentSlide?.text || previousGame.currentSlide?.imageUrl !== nextGame.currentSlide?.imageUrl) return true;
+  if (previousGame.selectedNextImage?.id !== nextGame.selectedNextImage?.id) return true;
+  const prevImages = previousGame.pendingImageOptions || [];
+  const nextImages = nextGame.pendingImageOptions || [];
+  if (prevImages.length !== nextImages.length || prevImages.some((image, index) => image.id !== nextImages[index]?.id)) return true;
+  const prevText = previousGame.pendingTextOptions || [];
+  const nextText = nextGame.pendingTextOptions || [];
+  if (prevText.length !== nextText.length || prevText.some((phrase, index) => phrase !== nextText[index])) return true;
+  return false;
+}
+
 function showHome() {
   render(`
     <div class="card fade-in">
@@ -86,14 +110,18 @@ function renderPromptDrafting(game) {
       return `<li>${player.name} — ${done ? 'Submitted' : 'Waiting for prompt'}</li>`;
     })
     .join('');
+  const blankParts = promptTemplate.split('____');
+  const blankInput = blankParts.length > 1
+    ? `<span>${blankParts[0]}</span><input id="promptInput" maxlength="60" value="${myDraft}" /><span>${blankParts[1]}</span>`
+    : `<div class="prompt-template">${promptTemplate}</div>`;
 
   render(`
     <div class="card fade-in">
       <div class="status">Round ${game.round} • Prompt Drafting</div>
-      ${isHost ? '<h2>Host: collect player prompts</h2>' : '<h2>Write your prompt</h2>'}
+      ${isHost ? '<h2>Host: collect player prompts</h2>' : '<h2>Fill in the blank</h2>'}
       ${isHost
         ? '<p>Each player should fill in their prompt. Once everyone has submitted, press Begin Round.</p>'
-        : `<p>Finish the sentence below in your own words.</p><div class="prompt-template">${promptTemplate}</div><textarea id="promptInput" placeholder="Write your finished prompt here...">${myDraft}</textarea><button id="submitPromptBtn">Submit prompt</button>`}
+        : `<p>Type the missing word or phrase in the blank.</p><div class="prompt-template">${blankInput}</div><button id="submitPromptBtn">Submit prompt</button>`}
       <div class="card">
         <h3>Prompt status</h3>
         <ul class="list">${statusList}</ul>
@@ -104,7 +132,8 @@ function renderPromptDrafting(game) {
 
   if (!isHost) {
     document.getElementById('submitPromptBtn').addEventListener('click', () => {
-      const prompt = document.getElementById('promptInput').value.trim();
+      const value = document.getElementById('promptInput').value.trim();
+      const prompt = blankParts.length > 1 ? `${blankParts[0]}${value}${blankParts[1]}` : value;
       socket.emit('submitPrompt', { code: game.code, prompt });
     });
   }
@@ -154,14 +183,16 @@ function renderPlaying(game) {
   const timer = Math.max(0, game.timerSeconds || 0);
   const slide = game.currentSlide;
   const imageChoices = game.pendingImageOptions || [];
+  const textChoices = game.pendingTextOptions || [];
   const nextSlideType = game.slides?.[game.currentSlideIndex + 1]?.type;
   const canChooseImage = isAssistant && game.stage === 'playing' && nextSlideType === 'image';
+  const canChooseText = isAssistant && game.stage === 'textChoice';
 
   const hostView = isHost
     ? `<div class="host-presentation">
         <div class="host-topbar">
           <span class="host-badge">Host View</span>
-          <span class="timer-pill">${game.stage === 'countdown' ? `Starts in ${timer}s` : `${timer}s`}</span>
+          <span class="timer-pill">${getTimerText(game)}</span>
         </div>
         <div class="slide-card big-slide">
           <div class="slide-label">${slide?.subtitle || 'Slide'}</div>
@@ -179,7 +210,7 @@ function renderPlaying(game) {
 
   const playerView = !isHost
     ? `<div class="card fade-in game-screen">
-        <div class="status">Round ${game.round} • <span class="timer-pill">${game.stage === 'countdown' ? `Starts in ${timer}s` : `${timer}s`}</span></div>
+        <div class="status">Round ${game.round} • <span class="timer-pill">${getTimerText(game)}</span></div>
         <div class="roles">
           <span class="tag">Speaker: ${game.speakerName || 'Speaker'}</span>
           <span class="tag">Assistant: ${game.assistantName || 'Assistant'}</span>
@@ -194,10 +225,12 @@ function renderPlaying(game) {
         </div>
 
         ${game.stage === 'countdown' ? '<p class="role-note">The speech starts after the countdown finishes.</p>' : ''}
+        ${game.stage === 'textChoice' ? '<p class="role-note">Choose the next transition phrase for the speaker.</p>' : ''}
         ${isSpeaker ? '<p class="role-note">You are the speaker. Decide when to move to the next slide.</p>' : ''}
         ${isSpeaker ? '<button id="nextSlideBtn" class="secondary">Skip to next slide</button>' : ''}
         ${canChooseImage ? '<p class="role-note">Choose the next image for the speaker.</p>' : ''}
         ${canChooseImage ? `<div class="assistant-tools">${imageChoices.map((image) => `<button class="image-option ${game.selectedNextImage?.id === image.id ? 'selected' : ''}" data-image-id="${image.id}"><img src="${image.imageUrl}" alt="${image.label}" /><span>${image.label}</span></button>`).join('')}</div>` : ''}
+        ${canChooseText ? `<div class="assistant-tools">${textChoices.map((phrase) => `<button class="topic-btn" data-phrase="${phrase}">${phrase}</button>`).join('')}</div>` : ''}
         ${!isSpeaker && !isAssistant && !isHost ? '<p class="role-note">The audience is watching the speaker and assistant.</p>' : ''}
       </div>`
     : '';
@@ -214,6 +247,14 @@ function renderPlaying(game) {
     document.querySelectorAll('.image-option').forEach((button) => {
       button.addEventListener('click', () => {
         socket.emit('chooseImageForNextSlide', { code: game.code, imageId: button.dataset.imageId });
+      });
+    });
+  }
+
+  if (canChooseText) {
+    document.querySelectorAll('.topic-btn').forEach((button) => {
+      button.addEventListener('click', () => {
+        socket.emit('chooseTextPhrase', { code: game.code, phrase: button.dataset.phrase });
       });
     });
   }
@@ -293,6 +334,7 @@ socket.on('joinedGame', ({ code, playerId: id, name }) => {
 });
 
 socket.on('gameUpdated', (game) => {
+  const previousGame = currentGame;
   currentGame = game;
   if (game.stage === 'lobby') {
     renderLobby(game);
@@ -300,8 +342,15 @@ socket.on('gameUpdated', (game) => {
     renderPromptDrafting(game);
   } else if (game.stage === 'topicChoice') {
     renderTopicChoice(game);
-  } else if (game.stage === 'countdown' || game.stage === 'playing') {
-    renderPlaying(game);
+  } else if (game.stage === 'countdown' || game.stage === 'playing' || game.stage === 'textChoice') {
+    if (shouldRebuildPlayingView(game, previousGame)) {
+      renderPlaying(game);
+    } else {
+      const timerPill = document.querySelector('.timer-pill');
+      if (timerPill) {
+        timerPill.textContent = getTimerText(game);
+      }
+    }
   } else if (game.stage === 'rating') {
     renderRating(game);
   }
@@ -313,7 +362,7 @@ socket.on('roundStarted', (game) => {
     renderPromptDrafting(game);
   } else if (game.stage === 'topicChoice') {
     renderTopicChoice(game);
-  } else if (game.stage === 'countdown' || game.stage === 'playing') {
+  } else if (game.stage === 'countdown' || game.stage === 'playing' || game.stage === 'textChoice') {
     renderPlaying(game);
   }
 });
