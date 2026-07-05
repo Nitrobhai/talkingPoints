@@ -25,6 +25,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const os = require('os');
 const QRCode = require('qrcode');
 
 const app = express();
@@ -146,6 +147,40 @@ function createRoomCode() {
     code += chars[Math.floor(Math.random() * chars.length)];
   }
   return code;
+}
+
+// Find this computer's address on the local Wi-Fi (like 192.168.1.20).
+// Phones on the SAME Wi-Fi can reach the host at this address. We use it
+// so the QR code never accidentally says "localhost" (which only means
+// "this device" and wouldn't work from someone else's phone).
+function getLanIp() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const net of interfaces[name]) {
+      // We want a normal IPv4 address that isn't the internal loopback one.
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return null; // no Wi-Fi/network found
+}
+
+// If a web address points at "localhost", swap in the real Wi-Fi address so
+// phones can actually reach it. If it's a real website address, leave it alone.
+function fixLocalhost(origin) {
+  try {
+    const url = new URL(origin);
+    const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+    const lanIp = getLanIp();
+    if (isLocal && lanIp) {
+      url.hostname = lanIp;
+      return url.origin;
+    }
+  } catch (err) {
+    // If the origin wasn't a valid address, just use it as-is.
+  }
+  return origin;
 }
 
 // Round a vote to the nearest 0.1 and keep it between 0 and 10.
@@ -301,7 +336,9 @@ io.on('connection', (socket) => {
     socket.join(game.code); // the TV joins its own room to hear updates
 
     // Build the link players will scan, e.g. https://yoursite.com/play?code=ABCD
-    const joinUrl = `${origin}/play?code=${game.code}`;
+    // fixLocalhost makes sure "localhost" becomes the real Wi-Fi address so
+    // phones can reach it during an in-person game.
+    const joinUrl = `${fixLocalhost(origin)}/play?code=${game.code}`;
 
     // Turn that link into a QR code image (a data URL we can put in an <img>).
     let qrDataUrl = '';
@@ -534,6 +571,17 @@ function revealResults(game) {
 // =============================================================
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
+  const lanIp = getLanIp();
+  console.log('');
   console.log('🎤 Talking Points is running!');
-  console.log(`   Open the TV screen here:  http://localhost:${PORT}`);
+  console.log('');
+  console.log(`   On THIS computer:            http://localhost:${PORT}`);
+  if (lanIp) {
+    // This is the important one for a game night: open the TV screen at THIS
+    // address so the QR code works and phones on the same Wi-Fi can join.
+    console.log(`   For phones (same Wi-Fi):     http://${lanIp}:${PORT}   <-- open the TV screen here`);
+  } else {
+    console.log('   (No Wi-Fi network detected — connect to Wi-Fi so phones can join.)');
+  }
+  console.log('');
 });

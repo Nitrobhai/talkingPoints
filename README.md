@@ -38,23 +38,27 @@ npm install
 npm start
 ```
 
-You'll see a message like:
+You'll see a message like this (your numbers will be different):
 
 ```
 🎤 Talking Points is running!
-   Open the TV screen here:  http://localhost:3000
+
+   On THIS computer:            http://localhost:3000
+   For phones (same Wi-Fi):     http://192.168.1.20:3000   <-- open the TV screen here
 ```
 
-**4. Open the TV screen.** Go to **http://localhost:3000** in your web browser. Click
-**"Create a Room"** and a QR code will appear.
+**4. Open the TV screen** at the **"For phones (same Wi-Fi)"** address it printed
+(like `http://192.168.1.20:3000`). Click **"Create a Room"** and a QR code appears.
 
-**5. Join with phones.** Each player scans the QR code with their phone's camera (or
-goes to the address shown and types the 4-letter room code). Type a name and tap **Join**.
+> 💡 Tip: opening `localhost` works too — the game is smart enough to build the QR code
+> using your Wi-Fi address anyway. But opening the Wi-Fi address is the safest.
 
-> 📶 **Important:** for phones to connect, the phones and the computer running the game
-> need to be on the **same Wi-Fi**. On your computer, find its local address (something
-> like `http://192.168.1.20:3000`) and use that instead of `localhost` when you want
-> phones to reach it. (See "Playing on real phones" below.)
+**5. Join with phones.** Each player scans the QR code with their phone's camera, types
+a name, and taps **Join**. (Or they can go to the address shown and type the 4-letter
+room code by hand.)
+
+> 📶 **The one rule:** the phones and the host computer must be on the **same Wi-Fi**.
+> That's it — no accounts, no installs on the phones.
 
 **6. Start the game** once **at least 3 people** have joined, and have fun!
 
