@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Talking Points — Join</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!--
+    This is the PHONE page. Players open it by scanning the QR code
+    (or by going to /play and typing the room code).
+    It shows different controls depending on your role:
+      - Speaker  -> "just talk!"
+      - Assistant -> buttons to pick slides
+      - Audience  -> a slider to vote 0–10
+  -->
+  <div class="wrap">
+    <header>
+      <h1>🎤 Talking Points</h1>
+      <p>Join the game on your phone.</p>
+    </header>
+
+    <main id="screen"></main>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="play.js"></script>
+</body>
+</html>
