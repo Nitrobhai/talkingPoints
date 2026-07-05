@@ -1,145 +1,245 @@
+/* =============================================================
+   Talking Points — styles (how everything LOOKS)
+   =============================================================
+   CSS is the "paint" for our web pages. It doesn't do any game
+   logic — it just decides colors, sizes, and spacing.
+   ============================================================= */
+
 :root {
-  color-scheme: dark;
-  background: #12131a;
-  color: #e3e7ff;
-  font-family: Inter, system-ui, sans-serif;
+  /* These are our color "nicknames". Change one here and it
+     updates everywhere it's used. */
+  --bg: #0f1024;
+  --bg-soft: #1b1c3a;
+  --card: #24264d;
+  --accent: #ff5da2;
+  --accent-2: #4dd6ff;
+  --text: #f4f5ff;
+  --muted: #a9abd6;
+  --good: #4ade80;
 }
 
 * {
-  box-sizing: border-box;
+  box-sizing: border-box; /* makes width/padding math behave nicely */
 }
 
 body {
   margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: radial-gradient(circle at top, var(--bg-soft), var(--bg));
+  color: var(--text);
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at top, rgba(100, 115, 255, 0.2), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(86, 255, 191, 0.12), transparent 25%),
-    #0b0c12;
 }
 
-.app-shell {
-  width: min(100%, 980px);
-  margin: 24px;
-  padding: 24px;
-  border-radius: 24px;
-  background: rgba(18, 19, 26, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 18px 60px;
 }
 
-header {
-  margin-bottom: 24px;
-}
-
-h1 {
-  margin: 0 0 6px;
-  font-size: clamp(2rem, 4vw, 3rem);
-}
-
-p {
+header h1 {
   margin: 0;
-  color: #aab1ff;
+  font-size: 2rem;
+  letter-spacing: 1px;
+}
+header p {
+  margin: 4px 0 0;
+  color: var(--muted);
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+/* A "card" is a rounded box we put content inside. */
+.card {
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 22px;
+  margin-top: 18px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
 }
 
+h2 { margin: 0 0 8px; }
+h3 { margin: 0 0 8px; }
+
+.muted { color: var(--muted); }
+.center { text-align: center; }
+
+/* The little grey label at the top of a screen, e.g. "Round 2". */
+.status {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+}
+
+/* Buttons */
 button {
+  font: inherit;
+  font-weight: 700;
+  color: #12131f;
+  background: var(--accent);
   border: none;
   border-radius: 14px;
-  padding: 14px 18px;
-  cursor: pointer;
-  background: linear-gradient(135deg, #5f82ff, #3cd0c5);
-  color: white;
-  font-weight: 700;
-  transition: transform 0.16s ease, filter 0.16s ease;
-}
-
-button:hover {
-  transform: translateY(-1px);
-}
-
-button.secondary {
-  background: rgba(255, 255, 255, 0.08);
-  color: #cbd2ff;
-}
-
-button.danger {
-  background: #ff5f7a;
-}
-
-input,
-textarea,
-select {
+  padding: 14px 20px;
+  margin-top: 12px;
   width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: #edf2ff;
-  padding: 14px 16px;
-  margin: 8px 0 16px;
+  cursor: pointer;
+  transition: transform 0.05s ease, opacity 0.2s ease;
 }
-
-textarea {
-  min-height: 140px;
-  resize: vertical;
+button:hover { opacity: 0.92; }
+button:active { transform: scale(0.98); }
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
-
-.card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 20px;
-  margin: 16px 0;
+button.secondary {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
+button.blue { background: var(--accent-2); }
 
-.grid {
-  display: grid;
-  gap: 16px;
-}
-
-.grid-two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.status {
-  margin-bottom: 16px;
-  color: #7f8fff;
-}
-
+/* Text inputs */
 label {
   display: block;
-  margin-top: 12px;
-  margin-bottom: 6px;
-  color: #bcc5ff;
-  font-size: 0.95rem;
+  margin-top: 14px;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
-
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+input[type="text"] {
+  width: 100%;
+  font: inherit;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--bg-soft);
+  color: var(--text);
+  text-transform: none;
 }
+#joinCode { text-transform: uppercase; letter-spacing: 4px; font-weight: 700; }
 
+/* Lists of players */
+.list { list-style: none; padding: 0; margin: 8px 0 0; }
 .list li {
   padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
 }
 
-.fade-in {
-  animation: fadeIn 0.23s ease;
+/* The giant room code on the TV screen */
+.big-code {
+  font-size: 3.4rem;
+  font-weight: 800;
+  letter-spacing: 10px;
+  color: var(--accent-2);
+  text-align: center;
+  margin: 6px 0;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+/* QR code image */
+.qr {
+  display: block;
+  margin: 10px auto 0;
+  width: 260px;
+  max-width: 70vw;
+  background: #fff;
+  padding: 12px;
+  border-radius: 16px;
+}
+
+/* ---- The big slide on the TV screen ---- */
+.slide {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(160deg, #2a2c58, #1a1b38);
+  border-radius: 20px;
+}
+.slide .emoji { font-size: 6rem; line-height: 1; }
+.slide .slide-text {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-top: 16px;
+}
+.slide .kind {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 0.8rem;
+}
+
+/* The two big choice cards the assistant taps */
+.choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.choice {
+  background: var(--bg-soft);
+  color: var(--text); /* the choice cards are <button>s, so re-set light text */
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 18px 12px;
+  text-align: center;
+  margin-top: 0;
+}
+.choice:hover { border-color: var(--accent-2); opacity: 1; }
+.choice .emoji { font-size: 3rem; }
+.choice .txt { margin-top: 8px; font-weight: 600; font-size: 0.95rem; }
+
+/* ---- The voting slider ---- */
+.vote-number {
+  font-size: 4rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--accent-2);
+}
+.vote-outof { color: var(--muted); font-size: 1.4rem; }
+
+input[type="range"] {
+  width: 100%;
+  margin: 20px 0 6px;
+  height: 32px;
+  accent-color: var(--accent); /* colors the slider on most browsers */
+}
+.range-ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* Progress "who has voted" text */
+.progress { color: var(--muted); margin-top: 10px; }
+
+/* Big result number */
+.result-average {
+  font-size: 5rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--good);
+}
+
+/* A gentle fade-in when a new screen appears */
+.fade-in { animation: fade 0.25s ease; }
+@keyframes fade {
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Role badges shown on a player's phone */
+.role {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.role.speaker { background: var(--accent); color: #12131f; }
+.role.assistant { background: var(--accent-2); color: #12131f; }
+.role.audience { background: rgba(255,255,255,0.12); color: var(--text); }

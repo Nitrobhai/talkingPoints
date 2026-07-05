@@ -1,13 +1,14 @@
 {
   "name": "talking-points",
-  "version": "1.0.0",
-  "description": "A Jackbox-style Talking Points party game clone",
+  "version": "2.0.0",
+  "description": "A Jackbox-style Talking Points party game: improv slideshows with a QR-code join and a 0-10 slider vote.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.4",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.7.2"
   }
 }

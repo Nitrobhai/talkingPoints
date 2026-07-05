@@ -3,20 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Talking Points Clone</title>
+  <title>Talking Points — TV Screen</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-shell">
+  <!--
+    This is the TV / big-screen page. Open it on a laptop or TV.
+    It shows the QR code for players to scan, and the slides.
+    The phones open the OTHER page: /play
+  -->
+  <div class="wrap">
     <header>
-      <h1>Talking Points</h1>
-      <p>Host a slide presentation party game with friends.</p>
+      <h1>🎤 Talking Points</h1>
+      <p>The improv slideshow party game.</p>
     </header>
 
-    <main id="app"></main>
+    <!-- Everything gets drawn inside this box by host.js -->
+    <main id="screen"></main>
   </div>
 
+  <!-- socket.io.js is served automatically by our server -->
   <script src="/socket.io/socket.io.js"></script>
-  <script src="app.js"></script>
+  <script src="host.js"></script>
 </body>
 </html>
